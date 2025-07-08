@@ -1,0 +1,402 @@
+{% extends "includes/base.html" %}
+{% load static %}
+
+{% block extra_scripts %}
+<!-- Scripts para ApexCharts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest"></script>
+<script src="{% static 'js/charts/chart-base.js' %}"></script>
+<script src="{% static 'js/charts/line-chart.js' %}"></script>
+
+<!-- Passar URLs do Django para JavaScript -->
+<script>
+window.chartUrls = {
+    profitEvolution: "{% url 'bets:profit_evolution_data' %}",
+    roiBySport: "{% url 'bets:roi_by_sport_data' %}",
+    monthlySummary: "{% url 'bets:monthly_summary_data' %}"
+};
+</script>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock extra_scripts %}
+
+{% block content %}
+<main class="content">
+    <div class="container-fluid p-0">
+        
+        <h1 class="h3 mb-3"><strong>Análise</strong> de Apostas</h1>
+
+        <!-- Métricas Principais -->
+        <div class="row">
+            <div class="col-xl-6 col-xxl-5 d-flex">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col mt-0">
+                                            <h5 class="card-title">Total Apostado</h5>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="stat text-primary">
+                                                <i class="align-middle" data-feather="credit-card"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h1 class="mt-1 mb-3">€{{ total_staked|floatformat:2 }}</h1>
+                                    <div class="mb-0">
+                                        <span class="text-muted">{{ total_bets }} apostas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col mt-0">
+                                            <h5 class="card-title">Taxa de Vitórias</h5>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="stat text-primary">
+                                                <i class="align-middle" data-feather="target"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h1 class="mt-1 mb-3">{{ win_rate }}%</h1>
+                                    <div class="mb-0">
+                                        <span class="text-muted">{{ pending_bets }} pendentes</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col mt-0">
+                                            <h5 class="card-title">Lucro/Prejuízo</h5>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="stat text-primary">
+                                                <i class="align-middle" data-feather="trending-up"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h1 class="mt-1 mb-3 {% if roi_positive %}text-success{% else %}text-danger{% endif %}">
+                                        €{{ total_profit_loss|floatformat:2 }}
+                                    </h1>
+                                    <div class="mb-0">
+                                        {% if profit_trend_positive %}
+                                            <span class="text-success">
+                                                <i class="mdi mdi-arrow-up-right"></i> +{{ profit_trend }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger">
+                                                <i class="mdi mdi-arrow-down-right"></i> {{ profit_trend }}%
+                                            </span>
+                                        {% endif %}
+                                        <span class="text-muted">últimos 30 dias</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col mt-0">
+                                            <h5 class="card-title">ROI</h5>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="stat text-primary">
+                                                <i class="align-middle" data-feather="percent"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h1 class="mt-1 mb-3 {% if roi_positive %}text-success{% else %}text-danger{% endif %}">
+                                        {{ roi }}%
+                                    </h1>
+                                    <div class="mb-0">
+                                        <span class="text-muted">Retorno sobre investimento</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Evolução dos Lucros -->
+            <div class="col-xl-6 col-xxl-7">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Evolução dos Resultados</h5>
+                    </div>
+                    <div class="card-body py-3">
+                        <div class="chart chart-sm">
+                            <div id="profit-evolution-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Segunda Linha de Cards -->
+        <div class="row">
+            <!-- Estatísticas por Desporto -->
+            <div class="col-12 col-md-6 col-xxl-3 d-flex order-2 order-xxl-3">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Por Desporto</h5>
+                    </div>
+                    <div class="card-body d-flex">
+                        <div class="align-self-center w-100">
+                            <div class="py-3">
+                                <div class="chart chart-xs">
+                                    <div class="d-flex align-items-center justify-content-center" style="height: 150px;">
+                                        <span class="text-muted">Gráfico circular</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table mb-0">
+                                <tbody>
+                                    {% for sport_stat in sports_stats %}
+                                    <tr>
+                                        <td>{{ sport_stat.sport.name }}</td>
+                                        <td class="text-end">{{ sport_stat.total_bets }}</td>
+                                        <td class="text-end {% if sport_stat.profit_loss > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            €{{ sport_stat.profit_loss|floatformat:2 }}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">Sem dados</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas Avançadas -->
+            <div class="col-12 col-md-12 col-xxl-6 d-flex order-3 order-xxl-2">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Métricas Avançadas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="mb-3">
+                                    <h3 class="{% if ev_positive %}text-success{% else %}text-danger{% endif %}">
+                                        €{{ avg_expected_value|floatformat:2 }}
+                                    </h3>
+                                    <p class="text-muted mb-0">Valor Esperado Médio</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="mb-3">
+                                    <h3 class="text-primary">{{ avg_odds|floatformat:2 }}</h3>
+                                    <p class="text-muted mb-0">Odds Média</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="mb-3">
+                                    <h3 class="text-warning">€{{ pending_stake|floatformat:2 }}</h3>
+                                    <p class="text-muted mb-0">Em Risco</p>
+                                    <small class="text-muted">({{ pending_bets }} apostas pendentes)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookmakers -->
+            <div class="col-12 col-md-6 col-xxl-3 d-flex order-1 order-xxl-1">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Top Bookmakers</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="align-self-center w-100">
+                            {% for bm_stat in bookmaker_stats %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ bm_stat.bookmaker.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ bm_stat.total_bets }} apostas</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="{% if bm_stat.profit_loss > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        €{{ bm_stat.profit_loss|floatformat:2 }}
+                                    </div>
+                                    <small class="text-muted">€{{ bm_stat.total_staked|floatformat:0 }} volume</small>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted text-center">Sem dados disponíveis</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Últimas Apostas e Gráfico -->
+        <div class="row">
+            <div class="col-12 col-lg-8 col-xxl-9 d-flex">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Últimas Apostas</h5>
+                    </div>
+                    <table class="table table-hover my-0">
+                        <thead>
+                            <tr>
+                                <th>Jogo</th>
+                                <th class="d-none d-xl-table-cell">Data</th>
+                                <th class="d-none d-md-table-cell">Tipo</th>
+                                <th>Odds</th>
+                                <th class="d-none d-xl-table-cell">Stake</th>
+                                <th>Estado</th>
+                                <th class="d-none d-md-table-cell">P/L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bet in latest_bets %}
+                            <tr>
+                                <td>
+                                    <strong>{{ bet.home_team.name }} vs {{ bet.away_team.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ bet.sport.name }} - {{ bet.competition.name }}</small>
+                                </td>
+                                <td class="d-none d-xl-table-cell">{{ bet.date|date:"d/m/Y" }}</td>
+                                <td class="d-none d-md-table-cell">{{ bet.bet_type.name }}</td>
+                                <td>{{ bet.bookmaker_odds|floatformat:2 }}</td>
+                                <td class="d-none d-xl-table-cell">€{{ bet.stake|floatformat:2 }}</td>
+                                <td>
+                                    {% if bet.outcome == 'win' %}
+                                        <span class="badge bg-success">Ganhou</span>
+                                    {% elif bet.outcome == 'loss' %}
+                                        <span class="badge bg-danger">Perdeu</span>
+                                    {% elif bet.outcome == 'push' %}
+                                        <span class="badge bg-warning">Empate</span>
+                                    {% elif bet.outcome == 'void' %}
+                                        <span class="badge bg-secondary">Anulada</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    {% if bet.outcome != 'pending' %}
+                                        <span class="{% if bet.profit_loss > 0 %}text-success{% elif bet.profit_loss < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                            €{{ bet.profit_loss|floatformat:2 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    Ainda não tem apostas registadas
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras Mensal -->
+            <div class="col-12 col-lg-4 col-xxl-3 d-flex">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Resultados Mensais</h5>
+                    </div>
+                    <div class="card-body d-flex w-100">
+                        <div class="align-self-center chart chart-lg w-100">
+                            <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">Gráfico de barras mensal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+
+<!-- Teste básico para verificar se tudo funciona -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest"></script>
+
+<script>
+console.log('=== TESTE BÁSICO INICIADO ===');
+
+// 1. Verificar se ApexCharts carregou
+setTimeout(() => {
+    if (typeof ApexCharts !== 'undefined') {
+        console.log('✅ ApexCharts carregado!');
+        
+        // 2. Verificar se container existe
+        const container = document.getElementById('profit-evolution-chart');
+        if (container) {
+            console.log('✅ Container encontrado!');
+            
+            // 3. Testar fetch dos dados
+            fetch("{% url 'bets:profit_evolution_data' %}")
+                .then(response => {
+                    console.log('✅ Resposta recebida:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Dados recebidos:', data);
+                    
+                    // 4. Criar gráfico super simples
+                    const options = {
+                        series: [{
+                            name: 'Lucro Acumulado',
+                            data: data.cumulative_profit
+                        }],
+                        chart: {
+                            type: 'line',
+                            height: 300
+                        },
+                        xaxis: {
+                            categories: data.labels
+                        },
+                        title: {
+                            text: '🎉 GRÁFICO FUNCIONANDO! Total: €' + data.final_cumulative
+                        },
+                        colors: ['#10B981'],
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3
+                        }
+                    };
+                    
+                    const chart = new ApexCharts(container, options);
+                    chart.render();
+                    
+                    console.log('🎉 SUCESSO! Gráfico criado com êxito!');
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao buscar dados:', error);
+                    container.innerHTML = '<div class="alert alert-danger">Erro: ' + error.message + '</div>';
+                });
+        } else {
+            console.error('❌ Container #profit-evolution-chart NÃO encontrado!');
+            console.log('Containers disponíveis:', document.querySelectorAll('[id*="chart"]'));
+        }
+    } else {
+        console.error('❌ ApexCharts NÃO carregou!');
+    }
+}, 1000);
+
+</script>
+
+
+{% endblock content %}
+
