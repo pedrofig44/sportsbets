@@ -1,0 +1,74 @@
+<!-- templates/bets/partials/ev_display.html -->
+<div class="text-center">
+    <!-- Expected Value -->
+    <div class="mb-3">
+        <h3 class="{% if ev_positive %}text-success{% else %}text-danger{% endif %} mb-1">
+            €{{ ev|floatformat:2 }}
+        </h3>
+        <p class="text-muted mb-0">Valor Esperado (EV)</p>
+        {% if ev_positive %}
+            <small class="text-success">✓ Aposta com valor</small>
+        {% elif ev < 0 %}
+            <small class="text-danger">✗ EV negativo</small>
+        {% else %}
+            <small class="text-muted">Neutro</small>
+        {% endif %}
+    </div>
+
+    <!-- Probability Comparison -->
+    {% if implied_prob > 0 %}
+    <div class="row mb-3">
+        <div class="col-6">
+            <div class="text-center">
+                <h5 class="{% if prob_advantage %}text-success{% else %}text-warning{% endif %} mb-1">
+                    {{ estimated_prob|floatformat:1 }}%
+                </h5>
+                <small class="text-muted">Sua Estimativa</small>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="text-center">
+                <h5 class="text-info mb-1">{{ implied_prob|floatformat:1 }}%</h5>
+                <small class="text-muted">Prob. Implícita</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Financial Info -->
+    {% if potential_profit > 0 %}
+    <div class="border-top pt-3">
+        <div class="row text-center">
+            <div class="col-6">
+                <div class="mb-2">
+                    <strong class="text-success">€{{ potential_profit|floatformat:2 }}</strong>
+                    <br>
+                    <small class="text-muted">Lucro Potencial</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="mb-2">
+                    <strong class="text-primary">{{ roi_percentage|floatformat:1 }}%</strong>
+                    <br>
+                    <small class="text-muted">ROI Potencial</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Advice -->
+    {% if ev_positive and prob_advantage %}
+        <div class="alert alert-success py-2 mt-3">
+            <small><i class="align-middle" data-feather="thumbs-up"></i> Boa aposta! EV positivo e probabilidade favorável.</small>
+        </div>
+    {% elif ev < -5 %}
+        <div class="alert alert-danger py-2 mt-3">
+            <small><i class="align-middle" data-feather="alert-triangle"></i> EV muito negativo. Considere rever os valores.</small>
+        </div>
+    {% elif not prob_advantage and implied_prob > 0 %}
+        <div class="alert alert-warning py-2 mt-3">
+            <small><i class="align-middle" data-feather="info"></i> Sua probabilidade é menor que a implícita.</small>
+        </div>
+    {% endif %}
+</div>

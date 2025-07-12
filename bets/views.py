@@ -1,18 +1,86 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.db.models import Sum, Avg, Count, Q
-from .models import Bet, Sport, BetType, Bookmaker
-from django.utils import timezone
+from .models import Bet, Sport, BetType, Bookmaker, Competition, Team
+from django.utils import timezone 
 from datetime import datetime, timedelta
 from decimal import Decimal
-
+from .forms import BetForm
 
 # Adicione estas importações no topo do views.py
 from django.http import JsonResponse
 import calendar
 
-# Adicione estas funções ao seu views.py (após a dashboard_view)
+def add_bet_view(request):
+    """View for adding a new bet"""
+    if request.method == 'POST':
+        form = BetForm(request.POST)
+        if form.is_valid():
+            bet = form.save()
+            messages.success(request, f'Aposta adicionada com sucesso! EV: €{bet.expected_value}')
+            return redirect('bets:dashboard')
+        else:
+            messages.error(request, 'Erro ao adicionar aposta. Verifique os dados inseridos.')
+    else:
+        form = BetForm()
+    
+    context = {
+        'form': form,
+        'page_title': 'Adicionar Nova Aposta'
+    }
+    return render(request, 'bets/add_bet.html', context)
 
-# Substitua as suas funções pelas versões com debug:
+def calculate_ev(request):
+    """HTMX view to calculate and display Expected Value in real-time"""
+    try:
+        estimated_prob = request.GET.get('estimated_probability')
+        odds = request.GET.get('bookmaker_odds')
+        stake = request.GET.get('stake')
+        
+        ev = 0
+        implied_prob = 0
+        potential_profit = 0
+        roi_percentage = 0
+        
+        if estimated_prob and odds and stake:
+            prob = float(estimated_prob) / 100
+            odds_val = float(odds)
+            stake_val = float(stake)
+            
+            # Calculate Expected Value
+            ev = (prob * (odds_val - 1) * stake_val) - ((1 - prob) * stake_val)
+            
+            # Calculate implied probability
+            implied_prob = (1 / odds_val) * 100
+            
+            # Calculate potential profit
+            potential_profit = (odds_val - 1) * stake_val
+            
+            # Calculate ROI percentage
+            roi_percentage = (potential_profit / stake_val) * 100 if stake_val > 0 else 0
+        
+        context = {
+            'ev': round(ev, 2),
+            'implied_prob': round(implied_prob, 2),
+            'estimated_prob': float(estimated_prob) if estimated_prob else 0,
+            'potential_profit': round(potential_profit, 2),
+            'roi_percentage': round(roi_percentage, 2),
+            'ev_positive': ev > 0,
+            'prob_advantage': float(estimated_prob) > implied_prob if estimated_prob else False
+        }
+        
+        return render(request, 'bets/partials/ev_display.html', context)
+    
+    except (ValueError, TypeError):
+        return render(request, 'bets/partials/ev_display.html', {
+            'ev': 0,
+            'implied_prob': 0,
+            'estimated_prob': 0,
+            'potential_profit': 0,
+            'roi_percentage': 0,
+            'ev_positive': False,
+            'prob_advantage': False
+        })
 
 def profit_evolution_data(request):
     """
@@ -231,7 +299,6 @@ def monthly_summary_data(request):
             'message': str(e),
             'debug': 'Exception in monthly_summary_data'
         }, status=500)
-
 
 
 def dashboard_view(request):

@@ -5,8 +5,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('main.urls')),
-    path('bets/', include('bets.urls')),
+    path('', include('bets.urls')),  # Changed: bets app now handles root URL
+    path('main/', include('main.urls')),
 ]
 
 # Add this for serving static files in development

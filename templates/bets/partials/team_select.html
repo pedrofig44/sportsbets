@@ -1,0 +1,20 @@
+<!-- templates/bets/partials/team_selects.html -->
+<div class="col-md-6 mb-3">
+    <label for="id_home_team" class="form-label">Equipa Casa</label>
+    <select name="home_team" class="form-select" id="id_home_team">
+        <option value="">---------</option>
+        {% for team in teams %}
+        <option value="{{ team.pk }}">{{ team.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label for="id_away_team" class="form-label">Equipa Visitante</label>
+    <select name="away_team" class="form-select" id="id_away_team">
+        <option value="">---------</option>
+        {% for team in teams %}
+        <option value="{{ team.pk }}">{{ team.name }}</option>
+        {% endfor %}
+    </select>
+</div>

@@ -120,7 +120,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Add this section to enable serving static files in development
 if DEBUG:
     STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static'),
+        os.path.join(BASE_DIR.parent, 'static'),
     ]
 
 
