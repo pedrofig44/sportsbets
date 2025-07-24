@@ -192,7 +192,7 @@ window.chartUrls = {
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 text-center">
+                            <div class="col-md-3 text-center">
                                 <div class="mb-3">
                                     <h3 class="{% if ev_positive %}text-success{% else %}text-danger{% endif %}">
                                         €{{ avg_expected_value|floatformat:2 }}
@@ -200,17 +200,55 @@ window.chartUrls = {
                                     <p class="text-muted mb-0">Valor Esperado Médio</p>
                                 </div>
                             </div>
-                            <div class="col-md-4 text-center">
+                            <div class="col-md-3 text-center">
                                 <div class="mb-3">
                                     <h3 class="text-primary">{{ avg_odds|floatformat:2 }}</h3>
                                     <p class="text-muted mb-0">Odds Média</p>
                                 </div>
                             </div>
-                            <div class="col-md-4 text-center">
+                            <div class="col-md-3 text-center">
                                 <div class="mb-3">
                                     <h3 class="text-warning">€{{ pending_stake|floatformat:2 }}</h3>
                                     <p class="text-muted mb-0">Em Risco</p>
                                     <small class="text-muted">({{ pending_bets }} apostas pendentes)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="mb-3">
+                                    <h3 class="text-info">{{ avg_stake|floatformat:2 }}€</h3>
+                                    <p class="text-muted mb-0">Stake Médio</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-3 text-center">
+                                <div class="mb-3">
+                                    <h3 class="{% if kelly_positive %}text-success{% else %}text-danger{% endif %}">
+                                        {{ kelly_criterion|floatformat:2 }}%
+                                    </h3>
+                                    <p class="text-muted mb-0">Kelly Criterion</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="mb-3">
+                                    <h3 class="text-primary">{{ longest_streak }}</h3>
+                                    <p class="text-muted mb-0">Maior Sequência</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="mb-3">
+                                    <h3 class="{% if sharpe_positive %}text-success{% else %}text-danger{% endif %}">
+                                        {{ sharpe_ratio|floatformat:2 }}
+                                    </h3>
+                                    <p class="text-muted mb-0">Rácio Sharpe</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="mb-3">
+                                    <h3 class="{% if yield_positive %}text-success{% else %}text-danger{% endif %}">
+                                        {{ yield_percentage|floatformat:2 }}%
+                                    </h3>
+                                    <p class="text-muted mb-0">Yield</p>
                                 </div>
                             </div>
                         </div>

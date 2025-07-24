@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Avg, Count, Q
 from .models import Bet, Sport, BetType, Bookmaker, Competition, Team
 from django.utils import timezone 
@@ -11,6 +13,7 @@ from .forms import BetForm
 from django.http import JsonResponse
 import calendar
 
+@login_required
 def add_bet_view(request):
     """View for adding a new bet"""
     if request.method == 'POST':
@@ -24,9 +27,13 @@ def add_bet_view(request):
     else:
         form = BetForm()
     
+    # Get sports for the collapsible forms
+    sports = Sport.objects.filter(is_active=True)
+    
     context = {
         'form': form,
-        'page_title': 'Adicionar Nova Aposta'
+        'page_title': 'Adicionar Nova Aposta',
+        'sports': sports
     }
     return render(request, 'bets/add_bet.html', context)
 
@@ -301,6 +308,7 @@ def monthly_summary_data(request):
         }, status=500)
 
 
+@login_required
 def dashboard_view(request):
     """View para o dashboard principal de análise de apostas"""
     
@@ -444,5 +452,84 @@ def dashboard_view(request):
     }
     
     return render(request, 'bets/dashboard.html', context)
+
+
+@staff_member_required
+def create_competition(request):
+    """Admin view to create new competition"""
+    if request.method == 'POST':
+        try:
+            sport_id = request.POST.get('sport')
+            name = request.POST.get('name')
+            competition_type = request.POST.get('competition_type', 'league')
+            division = request.POST.get('division', '1')
+            country = request.POST.get('country', '')
+            
+            if not sport_id or not name:
+                messages.error(request, 'Desporto e nome são obrigatórios.')
+                return redirect('bets:add_bet')
+                
+            sport = Sport.objects.get(id=sport_id)
+            
+            competition = Competition.objects.create(
+                name=name,
+                sport=sport,
+                competition_type=competition_type,
+                division=division,
+                country=country
+            )
+            
+            messages.success(request, f'Competição "{competition.name}" criada com sucesso!')
+            
+        except Sport.DoesNotExist:
+            messages.error(request, 'Desporto não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao criar competição: {str(e)}')
+    
+    return redirect('bets:add_bet')
+
+
+@staff_member_required
+def create_team(request):
+    """Admin view to create new team"""
+    if request.method == 'POST':
+        try:
+            sport_id = request.POST.get('sport')
+            name = request.POST.get('name')
+            short_name = request.POST.get('short_name', '')
+            country = request.POST.get('country', '')
+            
+            if not sport_id or not name:
+                messages.error(request, 'Desporto e nome são obrigatórios.')
+                return redirect('bets:add_bet')
+                
+            sport = Sport.objects.get(id=sport_id)
+            
+            # Check if team already exists
+            if Team.objects.filter(name=name, sport=sport).exists():
+                messages.error(request, f'Equipa "{name}" já existe neste desporto.')
+                return redirect('bets:add_bet')
+            
+            team = Team.objects.create(
+                name=name,
+                short_name=short_name,
+                sport=sport,
+                country=country
+            )
+            
+            messages.success(request, f'Equipa "{team.name}" criada com sucesso!')
+            
+        except Sport.DoesNotExist:
+            messages.error(request, 'Desporto não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao criar equipa: {str(e)}')
+    
+    return redirect('bets:add_bet')
+
+
+def get_sports_data(request):
+    """Simple view to get sports data for dropdowns"""
+    sports = Sport.objects.filter(is_active=True).values('id', 'name')
+    return JsonResponse({'sports': list(sports)})
 
 

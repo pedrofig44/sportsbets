@@ -81,17 +81,27 @@
 
 				<div class="navbar-collapse collapse">
 					<ul class="navbar-nav navbar-align">
+						{% if user.is_authenticated %}
 						<li class="nav-item dropdown">
 							<a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
                 <img src="{% static 'img/avatars/avatar.jpg' %}" class="avatar img-fluid rounded me-1" alt="User" /> 
-                <span class="text-dark">Utilizador</span>
+                <span class="text-dark">{{ user.first_name|default:user.username }}</span>
               </a>
 							<div class="dropdown-menu dropdown-menu-end">
+								{% if user.is_staff %}
 								<a class="dropdown-item" href="/admin/"><i class="align-middle me-1" data-feather="settings"></i> Admin</a>
 								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="log-out"></i> Sair</a>
+								{% endif %}
+								<a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="align-middle me-1" data-feather="log-out"></i> Sair</a>
 							</div>
 						</li>
+						{% else %}
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'accounts:login' %}">
+								<i class="align-middle me-1" data-feather="log-in"></i> Entrar
+							</a>
+						</li>
+						{% endif %}
 					</ul>
 				</div>
 			</nav>

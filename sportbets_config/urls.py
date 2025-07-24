@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('bets.urls')),  # Changed: bets app now handles root URL
     path('main/', include('main.urls')),
+    path('accounts/', include('accounts.urls')),  # Add accounts app
 ]
 
 # Add this for serving static files in development

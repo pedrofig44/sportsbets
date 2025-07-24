@@ -64,14 +64,21 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.competition.id_for_label }}" class="form-label">{{ form.competition.label }}</label>
-                                    {{ form.competition }}
+                                    <div class="input-group">
+                                        {{ form.competition }}
+                                        {% if user.is_staff %}
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#competitionForm" aria-expanded="false" title="Gerir Competições">
+                                            <i data-feather="plus" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     {% if form.competition.errors %}
                                         <div class="text-danger small">{{ form.competition.errors.0 }}</div>
                                     {% endif %}
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
-                                    <div class="form-check form-switch mt-4">
+                                    <div class="form-check form-switch" style="margin-top: 32px;">
                                         {{ form.neutral_ground }}
                                         <label class="form-check-label" for="{{ form.neutral_ground.id_for_label }}">
                                             {{ form.neutral_ground.label }}
@@ -91,7 +98,14 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.home_team.id_for_label }}" class="form-label">{{ form.home_team.label }}</label>
-                                    {{ form.home_team }}
+                                    <div class="input-group">
+                                        {{ form.home_team }}
+                                        {% if user.is_staff %}
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#teamForm" aria-expanded="false" title="Gerir Equipas">
+                                            <i data-feather="plus" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     {% if form.home_team.errors %}
                                         <div class="text-danger small">{{ form.home_team.errors.0 }}</div>
                                     {% endif %}
@@ -99,7 +113,14 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.away_team.id_for_label }}" class="form-label">{{ form.away_team.label }}</label>
-                                    {{ form.away_team }}
+                                    <div class="input-group">
+                                        {{ form.away_team }}
+                                        {% if user.is_staff %}
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#teamForm" aria-expanded="false" title="Gerir Equipas">
+                                            <i data-feather="plus" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     {% if form.away_team.errors %}
                                         <div class="text-danger small">{{ form.away_team.errors.0 }}</div>
                                     {% endif %}
@@ -125,9 +146,26 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.confidence_level.id_for_label }}" class="form-label">{{ form.confidence_level.label }}</label>
-                                    {{ form.confidence_level }}
+                                    <div class="d-flex gap-3 mt-2">
+                                        {% for radio in form.confidence_level %}
+                                            <div class="form-check">
+                                                {{ radio.tag }}
+                                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                    {{ radio.choice_label }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                     {% if form.confidence_level.errors %}
                                         <div class="text-danger small">{{ form.confidence_level.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.outcome.id_for_label }}" class="form-label">{{ form.outcome.label }}</label>
+                                    {{ form.outcome }}
+                                    {% if form.outcome.errors %}
+                                        <div class="text-danger small">{{ form.outcome.errors.0 }}</div>
                                     {% endif %}
                                 </div>
                                 
@@ -186,6 +224,15 @@
                                         <div class="text-danger small">{{ form.stake.errors.0 }}</div>
                                     {% endif %}
                                 </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_profit_loss" class="form-label">Lucro/Prejuízo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">€</span>
+                                        <input type="number" class="form-control" id="id_profit_loss" step="0.01" placeholder="Calculado automaticamente" readonly>
+                                    </div>
+                                    <small class="text-muted">Este campo é calculado automaticamente com base no resultado</small>
+                                </div>
                             </div>
 
                             <!-- Notes Section -->
@@ -230,8 +277,110 @@
                 </div>
             </div>
 
+
             <!-- Information Sidebar -->
             <div class="col-12 col-xl-4">
+                <!-- Admin Forms (for staff only) -->
+                {% if user.is_staff %}
+                <!-- Competition Form (collapsible) -->
+                <div class="collapse mb-3" id="competitionForm">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="align-middle" data-feather="award"></i>
+                                Adicionar Nova Competição
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'bets:create_competition' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="competitionName" class="form-label">Nome da Competição</label>
+                                    <input type="text" class="form-control form-control-sm" name="name" id="competitionName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="competitionSport" class="form-label">Desporto</label>
+                                    <select class="form-select form-select-sm" name="sport" id="competitionSport" required>
+                                        <option value="">Selecione um desporto...</option>
+                                        {% for sport in sports %}
+                                        <option value="{{ sport.id }}">{{ sport.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="competitionType" class="form-label">Tipo</label>
+                                    <select class="form-select form-select-sm" name="competition_type" id="competitionType">
+                                        <option value="league">Liga</option>
+                                        <option value="cup">Taça</option>
+                                        <option value="tournament">Torneio</option>
+                                        <option value="playoff">Playoff</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="competitionDivision" class="form-label">Divisão</label>
+                                    <select class="form-select form-select-sm" name="division" id="competitionDivision">
+                                        <option value="1">1ª Divisão</option>
+                                        <option value="2">2ª Divisão</option>
+                                        <option value="3">3ª Divisão</option>
+                                        <option value="none">Nenhuma</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="competitionCountry" class="form-label">País</label>
+                                    <input type="text" class="form-control form-control-sm" name="country" id="competitionCountry">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">Adicionar Competição</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#competitionForm">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Form (collapsible) -->
+                <div class="collapse mb-3" id="teamForm">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="align-middle" data-feather="users"></i>
+                                Adicionar Nova Equipa
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'bets:create_team' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="teamName" class="form-label">Nome da Equipa</label>
+                                    <input type="text" class="form-control form-control-sm" name="name" id="teamName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamShortName" class="form-label">Nome Abreviado</label>
+                                    <input type="text" class="form-control form-control-sm" name="short_name" id="teamShortName" maxlength="10" placeholder="Ex: FCB">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamSport" class="form-label">Desporto</label>
+                                    <select class="form-select form-select-sm" name="sport" id="teamSport" required>
+                                        <option value="">Selecione um desporto...</option>
+                                        {% for sport in sports %}
+                                        <option value="{{ sport.id }}">{{ sport.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamCountry" class="form-label">País</label>
+                                    <input type="text" class="form-control form-control-sm" name="country" id="teamCountry">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">Adicionar Equipa</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#teamForm">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Tips Card -->
                 <div class="card">
                     <div class="card-header">
@@ -275,8 +424,72 @@
                         </small>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </main>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const outcomeField = document.getElementById('{{ form.outcome.id_for_label }}');
+    const oddsField = document.getElementById('{{ form.bookmaker_odds.id_for_label }}');
+    const stakeField = document.getElementById('{{ form.stake.id_for_label }}');
+    const profitField = document.getElementById('id_profit_loss');
+    
+    function calculateProfit() {
+        const outcome = outcomeField.value;
+        const odds = parseFloat(oddsField.value) || 0;
+        const stake = parseFloat(stakeField.value) || 0;
+        
+        if (stake > 0 && odds > 0) {
+            let profit = 0;
+            
+            switch(outcome) {
+                case 'win':
+                    profit = (odds - 1) * stake;
+                    break;
+                case 'loss':
+                    profit = -stake;
+                    break;
+                case 'push':
+                    profit = 0;
+                    break;
+                case 'void':
+                    profit = 0;
+                    break;
+                case 'pending':
+                default:
+                    profit = 0;
+                    break;
+            }
+            
+            profitField.value = profit.toFixed(2);
+            
+            // Update color based on profit/loss
+            profitField.parentElement.classList.remove('text-success', 'text-danger', 'text-muted');
+            if (profit > 0) {
+                profitField.parentElement.classList.add('text-success');
+            } else if (profit < 0) {
+                profitField.parentElement.classList.add('text-danger');
+            } else {
+                profitField.parentElement.classList.add('text-muted');
+            }
+        } else {
+            profitField.value = '';
+            profitField.parentElement.classList.remove('text-success', 'text-danger', 'text-muted');
+        }
+    }
+    
+    // Add event listeners
+    if (outcomeField) outcomeField.addEventListener('change', calculateProfit);
+    if (oddsField) oddsField.addEventListener('input', calculateProfit);
+    if (stakeField) stakeField.addEventListener('input', calculateProfit);
+    
+    // Initial calculation
+    calculateProfit();
+});
+</script>
+
 {% endblock content %}

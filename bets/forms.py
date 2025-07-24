@@ -12,7 +12,7 @@ class BetForm(forms.ModelForm):
             'date', 'sport', 'competition', 'home_team', 'away_team', 
             'neutral_ground', 'bet_type', 'bet_description', 
             'estimated_probability', 'bookmaker', 'bookmaker_odds', 
-            'stake', 'confidence_level', 'notes'
+            'stake', 'confidence_level', 'outcome', 'notes'
         ]
         
         widgets = {
@@ -61,10 +61,11 @@ class BetForm(forms.ModelForm):
                     'placeholder': '0.00'
                 }
             ),
-            'confidence_level': forms.Select(
-                choices=[(i, f'{i} ⭐' * i) for i in range(1, 6)],
-                attrs={'class': 'form-select'}
+            'confidence_level': forms.RadioSelect(
+                choices=[(i, str(i)) for i in range(1, 6)],
+                attrs={'class': 'form-check-input'}
             ),
+            'outcome': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(
                 attrs={
                     'class': 'form-control',
@@ -88,6 +89,7 @@ class BetForm(forms.ModelForm):
             'bookmaker_odds': 'Odds',
             'stake': 'Valor Apostado (€)',
             'confidence_level': 'Nível de Confiança',
+            'outcome': 'Estado da Aposta',
             'notes': 'Notas',
         }
 

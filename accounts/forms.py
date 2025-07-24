@@ -1,0 +1,1 @@
+# No custom forms needed - using simple function-based views
